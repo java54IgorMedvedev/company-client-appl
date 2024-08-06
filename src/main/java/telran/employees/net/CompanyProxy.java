@@ -10,66 +10,60 @@ import telran.net.Request;
 import telran.net.TcpClient;
 
 public class CompanyProxy implements Company {
-    TcpClient tcpClient;
+     TcpClient tcpClient;
      
-    public CompanyProxy(TcpClient tcpClient) {
-        this.tcpClient = tcpClient;
-    }
+	public CompanyProxy(TcpClient tcpClient) {
+		this.tcpClient = tcpClient;
+	}
 
-    @Override
-    public Iterator<Employee> iterator() {
-        throw new UnsupportedOperationException("Iterator is not supported for TCP proxy");
-    }
+	@Override
+	public Iterator<Employee> iterator() {
+		throw new UnsupportedOperationException("Iterator is not supported fro TCP proxy");
+	}
 
-    @Override
-    public void addEmployee(Employee empl) {
-        tcpClient.sendAndReceive(new Request("addEmployee", empl.getJSON()));
-    }
+	@Override
+	public void addEmployee(Employee empl) {
+		tcpClient.sendAndReceive(new Request("addEmployee", empl.getJSON()));
 
-    @Override
-    public Employee getEmployee(long id) {
-        String employeeJSON = tcpClient.sendAndReceive(new Request("getEmployee", String.valueOf(id)));
-        Employee employee = null;
-        if (employeeJSON == null || employeeJSON.isEmpty()) {
-            employee = null;
-        } else {
-            employee = (Employee) new Employee().setObject(employeeJSON);
-        }
-        return employee;
-    }
+	}
 
-    @Override
-    public Employee removeEmployee(long id) {
-        String removedEmployeeJSON = tcpClient.sendAndReceive(new Request("removeEmployee", String.valueOf(id)));
-        Employee removedEmployee = null;
-        if (removedEmployeeJSON == null || removedEmployeeJSON.isEmpty()) {
-            removedEmployee = null;
-        } else {
-            removedEmployee = (Employee) new Employee().setObject(removedEmployeeJSON);
-        }
-        return removedEmployee;
-    }
+	@Override
+	public Employee getEmployee(long id) {
+		return getRemoveEmployee("getEmployee",id);
+	}
 
-    @Override
-    public int getDepartmentBudget(String department) {
-        String budgetString = tcpClient.sendAndReceive(new Request("getDepartmentBudget", department));
-        int budget = Integer.parseInt(budgetString);
-        return budget;
-    }
+	private Employee getRemoveEmployee(String requestType, long id) {
+		String emplJSON = tcpClient.sendAndReceive
+				(new Request("getEmployee", "" + id));
+		return (Employee) new Employee().setObject(emplJSON);
+	}
 
-    @Override
-    public String[] getDepartments() {
-        String departmentsJSON = tcpClient.sendAndReceive(new Request("getDepartments", ""));
-        String[] departments = departmentsJSON.split(",");
-        return departments;
-    }
+	@Override
+	public Employee removeEmployee(long id) {
+		return getRemoveEmployee("removeEmployee", id);
+	}
 
-    @Override
-    public Manager[] getManagersWithMostFactor() {
-        String managersJSON = tcpClient.sendAndReceive(new Request("getManagersWithMostFactor", ""));
-        Manager[] managers = Arrays.stream(managersJSON.split(";"))
-                .map(s -> (Manager) new Employee().setObject(s))
-                .toArray(Manager[]::new);
-        return managers;
-    }
+	@Override
+	public int getDepartmentBudget(String department) {
+		
+		return Integer.parseInt(tcpClient
+				.sendAndReceive(new Request("getDepartmentBudget", department)));
+	}
+
+	@Override
+	public String[] getDepartments() {
+		
+		return tcpClient.sendAndReceive(new Request("getDepartments", ""))
+				.split(";");
+	}
+
+	@Override
+	public Manager[] getManagersWithMostFactor() {
+		String managersJSON = tcpClient.sendAndReceive(new Request("getManagersWithMostFactor", ""));
+		
+		return Arrays.stream(managersJSON.split(";"))
+				.map(s -> (Manager)new Employee().setObject(s))
+				.toArray(Manager[]::new);
+	}
+
 }
